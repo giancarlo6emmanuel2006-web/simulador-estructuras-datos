@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista Enlazada Doble - Estilo Spotify</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .banner {
+            background-color: #000000;
+            text-align: center;
+            padding: 15px 0;
+        }
+
+        .banner img { height: 100px; }
+
+        h2 { text-align: center; margin-top: 20px; font-weight: 700; }
+
+        .controles-agregar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .controles-agregar input {
+            padding: 12px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background-color: #2a2a2a;
+            color: white;
+            width: 200px;
+        }
+
+        .controles-agregar button {
+            background-color: #1db954;
+            color: black;
+            cursor: pointer;
+            border: none;
+            border-radius: 500px;
+            padding: 0 25px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .controles-agregar button:hover {
+            background-color: #1ed760;
+            transform: scale(1.04);
+        }
+
+        .contenedor-principal {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 0 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .reproductor {
+            background-color: #181818;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+            width: 250px;
+        }
+
+        .reproductor img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #info-reproduccion h4 { margin: 0 0 5px 0; font-size: 1.3em; }
+        #info-reproduccion p { margin: 0 0 20px 0; color: #b3b3b3; }
+
+        .botones-reproduccion button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 2em;
+            color: #b3b3b3;
+            transition: color 0.2s;
+        }
+
+        .botones-reproduccion button:hover { color: #ffffff; }
+
+        .panel-lista {
+            background-color: #181818;
+            min-height: 250px;
+            flex-grow: 1;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .cancion-nodo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #282828;
+            padding: 15px;
+            min-width: 160px;
+            text-align: center;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .cancion-nodo.sonando {
+            background-color: #383838;
+            border: 2px solid #1db954;
+            box-shadow: 0 0 15px rgba(29, 185, 84, 0.3);
+        }
+
+        .btn-eliminar-nodo {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .titulo-cancion { font-weight: bold; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+        .autor-cancion { font-size: 0.85em; color: #b3b3b3; }
+        .enlaces-punteros { font-size: 0.7em; color: #535353; margin-top: 10px; border-top: 1px solid #444; width: 100%; padding-top: 5px;}
+        
+        .flecha { margin: 0 10px; font-size: 1.5em; color: #b3b3b3; }
+        .vacio-null { font-weight: bold; color: #535353; display: flex; align-items: center; margin: 0 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="banner">
+        <a href="index.html">
+            <img src="img/logo.png" alt="Logo">
+        </a>
+    </div>
+
+    <h2>Lista Enlazada Doble (Mi Playlist)</h2>
+
+    <div class="controles-agregar">
+        <input type="text" id="nombreCancion" placeholder="Título de la canción">
+        <input type="text" id="artistaCancion" placeholder="Nombre del artista">
+        <button onclick="agregarNuevaCancion()">Agregar</button>
+    </div>
+
+    <div class="contenedor-principal">
+        <div class="reproductor">
+            <img src="img/portada.jpg" alt="Portada">
+            <div id="info-reproduccion">
+                <h4 id="titulo-actual">Silencio</h4>
+                <p id="artista-actual">---</p>
+            </div>
+            <div class="botones-reproduccion">
+                <button onclick="cancionAnterior()">⏮</button>
+                <button onclick="cancionSiguiente()">⏭</button>
+            </div>
+        </div>
+
+        <div class="panel-lista" id="contenedor-lista"></div>
+    </div>
+
+    <script>
+        class Cancion {
+            constructor(titulo, artista) {
+                this.titulo = titulo;
+                this.artista = artista;
+                this.anterior = null;
+                this.siguiente = null;
+            }
+        }
+
+        class ListaPlaylist {
+            constructor() {
+                this.inicio = null;
+                this.fin = null;
+                this.pistaActual = null;
+            }
+
+            añadir(titulo, artista) {
+                const nuevaCancion = new Cancion(titulo, artista);
+                if (!this.inicio) {
+                    this.inicio = nuevaCancion;
+                    this.fin = nuevaCancion;
+                    this.pistaActual = nuevaCancion;
+                } else {
+                    this.fin.siguiente = nuevaCancion;
+                    nuevaCancion.anterior = this.fin;
+                    this.fin = nuevaCancion;
+                }
+                this.actualizarInterfaz();
+            }
+
+            eliminar(nodoAEliminar) {
+                if (!nodoAEliminar) return;
+
+                // Si es la canción que está sonando, mover el reproductor
+                if (this.pistaActual === nodoAEliminar) {
+                    if (nodoAEliminar.siguiente) {
+                        this.pistaActual = nodoAEliminar.siguiente;
+                    } else if (nodoAEliminar.anterior) {
+                        this.pistaActual = nodoAEliminar.anterior;
+                    } else {
+                        this.pistaActual = null;
+                    }
+                }
+
+                // Ajustar punteros de los vecinos
+                if (nodoAEliminar.anterior) {
+                    nodoAEliminar.anterior.siguiente = nodoAEliminar.siguiente;
+                } else {
+                    this.inicio = nodoAEliminar.siguiente; // Era la cabeza
+                }
+
+                if (nodoAEliminar.siguiente) {
+                    nodoAEliminar.siguiente.anterior = nodoAEliminar.anterior;
+                } else {
+                    this.fin = nodoAEliminar.anterior; // Era el final
+                }
+
+                this.actualizarInterfaz();
+            }
+
+            siguiente() {
+                if (this.pistaActual && this.pistaActual.siguiente) {
+                    this.pistaActual = this.pistaActual.siguiente;
+                    this.actualizarInterfaz();
+                } else {
+                    alert("¡Llegaste al final de la playlist!");
+                }
+            }
+
+            anterior() {
+                if (this.pistaActual && this.pistaActual.anterior) {
+                    this.pistaActual = this.pistaActual.anterior;
+                    this.actualizarInterfaz();
+                } else {
+                    alert("Estás en la primera canción.");
+                }
+            }
+
+            actualizarInterfaz() {
+                // Info Reproductor
+                const tituloH4 = document.getElementById('titulo-actual');
+                const artistaP = document.getElementById('artista-actual');
+                
+                if (this.pistaActual) {
+                    tituloH4.textContent = this.pistaActual.titulo;
+                    artistaP.textContent = this.pistaActual.artista;
+                } else {
+                    tituloH4.textContent = "Silencio";
+                    artistaP.textContent = "---";
+                }
+
+                // Lista Visual
+                const contenedor = document.getElementById('contenedor-lista');
+                contenedor.innerHTML = ''; 
+                
+                if (!this.inicio) {
+                    contenedor.innerHTML = '<div class="vacio-null">Playlist vacía</div>';
+                    return;
+                }
+
+                const nullInicio = document.createElement('div');
+                nullInicio.className = 'vacio-null';
+                nullInicio.innerHTML = 'null <span class="flecha">←</span>';
+                contenedor.appendChild(nullInicio);
+
+                let temporal = this.inicio;
+                while (temporal) {
+                    const divNodo = document.createElement('div');
+                    divNodo.className = 'cancion-nodo';
+                    if (temporal === this.pistaActual) divNodo.classList.add('sonando');
+
+                    // Guardamos una referencia al nodo actual para el botón eliminar
+                    const nodoRef = temporal;
+
+                    divNodo.innerHTML = `
+                        <button class="btn-eliminar-nodo" title="Eliminar">×</button>
+                        <div class="titulo-cancion">${temporal.titulo}</div>
+                        <div class="autor-cancion">${temporal.artista}</div>
+                        <div class="enlaces-punteros">anterior | siguiente</div>
+                    `;
+
+                    // Evento para eliminar este nodo específico
+                    divNodo.querySelector('.btn-eliminar-nodo').onclick = () => {
+                        this.eliminar(nodoRef);
+                    };
+
+                    contenedor.appendChild(divNodo);
+
+                    if (temporal.siguiente) {
+                        const divFlecha = document.createElement('div');
+                        divFlecha.className = 'flecha';
+                        divFlecha.textContent = '⇄';
+                        contenedor.appendChild(divFlecha);
+                    }
+                    temporal = temporal.siguiente;
+                }
+
+                const nullFin = document.createElement('div');
+                nullFin.className = 'vacio-null';
+                nullFin.innerHTML = '<span class="flecha">→</span> null';
+                contenedor.appendChild(nullFin);
+            }
+        }
+
+        const miMusica = new ListaPlaylist();
+
+        function agregarNuevaCancion() {
+            const inputTitulo = document.getElementById('nombreCancion');
+            const inputArtista = document.getElementById('artistaCancion');
+            if (inputTitulo.value.trim() !== '') {
+                miMusica.añadir(inputTitulo.value, inputArtista.value || "Artista Desconocido");
+                inputTitulo.value = ''; 
+                inputArtista.value = '';
+                inputTitulo.focus();
+            }
+        }
+
+        function cancionSiguiente() { miMusica.siguiente(); }
+        function cancionAnterior() { miMusica.anterior(); }
+    </script>
+</body>
+</html>

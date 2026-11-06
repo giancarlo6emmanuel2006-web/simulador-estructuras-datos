@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lista Enlazada Simple - Tren Personalizado</title>
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+        background-color: #f4f7f6;
+    }
+    #header {
+        width: 100%;
+        padding: 10px;
+        background: #194775;
+    }
+    h1 { margin-top: 20px; color: #2c3e50; }
+    .controles { margin: 20px; }
+    input { padding: 10px; width: 200px; border-radius: 5px; border: 1px solid #ccc; }
+    
+    button { 
+        padding: 10px 15px; 
+        color: white; 
+        border: none; 
+        border-radius: 5px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        margin: 5px;
+    }
+    .btn-agregar { background-color: #194775; }
+    .btn-eliminar { background-color: #e74c3c; }
+    
+    .lista {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .nodo { position: relative; margin: 10px; text-align: center; }
+    .nodo img { width: 130px; }
+    
+    .valor {
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold;
+        color: white;
+        font-size: 18px;
+        text-shadow: 1px 1px 2px black;
+    }
+    .flecha { font-size: 30px; font-weight: bold; color: #194775; }
+    
+    .texto-null {
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 24px;
+        color: #e74c3c;
+        padding: 10px;
+        border: 2px dashed #e74c3c;
+        background: rgba(255,255,255,0.5);
+    }
+</style>
+</head>
+<body>
+
+    <header>
+        <div id="header">
+            <a href="index.html">
+                <img style="max-width: 100px;" src="img/logo.png">
+            </a>
+        </div>    
+    </header>
+
+    <h1>Simulación: Lista Enlazada Simple</h1>
+    <p>La <strong>Cabeza</strong> es la locomotora y el final es <strong>NULL</strong>.</p>
+
+    <div class="controles">
+        <input type="text" id="valor" placeholder="Dato del vagón...">
+        <button class="btn-agregar" onclick="agregarNodo()">Enganchar</button>
+        <button class="btn-eliminar" onclick="eliminarNodo()">Desenganchar</button>
+    </div>
+
+    <div id="lista" class="lista"></div>
+
+<script>
+// --- CONFIGURACIÓN DE IMÁGENES ---
+const imagenesVagones = [
+    "img/vagon1.png",
+    "img/vagon2.png",
+    "img/vagon3.png",
+    "img/vagon4.png"
+];
+
+class Nodo {
+    constructor(valor, imagen) {
+        this.valor = valor;
+        this.imagen = imagen; 
+        this.next = null;
+    }
+}
+
+class ListaEnlazada {
+    constructor() {
+        this.head = null;
+    }
+
+    agregar(valor, imagen) {
+        const nuevoNodo = new Nodo(valor, imagen);
+        if (this.head === null) {
+            this.head = nuevoNodo;
+        } else {
+            let actual = this.head;
+            while (actual.next !== null) {
+                actual = actual.next;
+            }
+            actual.next = nuevoNodo;
+        }
+    }
+
+    eliminar(valor) {
+        if (!this.head) return;
+
+        // Si es la cabeza
+        if (this.head.valor === valor) {
+            this.head = this.head.next;
+            // Si queda alguien, convertirlo en locomotora
+            if (this.head) this.head.imagen = "img/cabeza.png";
+            return;
+        }
+
+        // Buscar en el cuerpo del tren
+        let actual = this.head;
+        while (actual.next !== null) {
+            if (actual.next.valor === valor) {
+                actual.next = actual.next.next;
+                return;
+            }
+            actual = actual.next;
+        }
+    }
+}
+
+const miTren = new ListaEnlazada();
+
+function agregarNodo() {
+    const input = document.getElementById("valor");
+    const valor = input.value.trim();
+    if (valor === "") return;
+
+    let imagenElegida;
+    if (miTren.head === null) {
+        imagenElegida = "img/cabeza.png";
+    } else {
+        imagenElegida = imagenesVagones[Math.floor(Math.random() * imagenesVagones.length)];
+    }
+
+    miTren.agregar(valor, imagenElegida);
+    input.value = "";
+    input.focus();
+    mostrarLista();
+}
+
+function eliminarNodo() {
+    const input = document.getElementById("valor");
+    const valor = input.value.trim();
+    if (valor === "") return;
+
+    miTren.eliminar(valor);
+    input.value = "";
+    input.focus();
+    mostrarLista();
+}
+
+function mostrarLista() {
+    const contenedor = document.getElementById("lista");
+    contenedor.innerHTML = "";
+
+    let actual = miTren.head;
+
+    while (actual !== null) {
+        const nodoDiv = document.createElement("div");
+        nodoDiv.className = "nodo";
+        
+        nodoDiv.innerHTML = `
+            <img src="${actual.imagen}">
+            <div class="valor">${actual.valor}</div>
+        `;
+        contenedor.appendChild(nodoDiv);
+
+        const flecha = document.createElement("div");
+        flecha.className = "flecha";
+        flecha.textContent = "→";
+        contenedor.appendChild(flecha);
+
+        actual = actual.next;
+    }
+
+    const etiquetaNull = document.createElement("div");
+    etiquetaNull.className = "texto-null";
+    etiquetaNull.textContent = "NULL";
+    contenedor.appendChild(etiquetaNull);
+}
+
+mostrarLista();
+</script>
+</body>
+</html>
